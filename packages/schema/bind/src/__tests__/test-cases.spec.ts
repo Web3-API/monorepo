@@ -18,7 +18,6 @@ describe("Web3API Binding Test Suite", () => {
       for (const outputLanguage of testCase.outputLanguages) {
         // Verify it binds correctly
         const { language, directories } = outputLanguage;
-
         // Read the expected output directories
         const expectedOutput = {
           query: directories.query
@@ -32,7 +31,7 @@ describe("Web3API Binding Test Suite", () => {
         const output = bindSchema({
           language: language as TargetLanguage,
           query: testCase.input.query,
-          mutation: testCase.input.mutation
+          mutation: testCase.input.mutation,
         });
 
         const sort = (array: OutputEntry[]): OutputEntry[] => {

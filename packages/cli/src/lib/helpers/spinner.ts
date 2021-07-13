@@ -10,12 +10,12 @@ import { Ora } from "ora";
 //   spinner stops with the warning message and returns the `result` value.
 // Otherwise the spinner prints the in-progress message with a check mark
 //   and simply returns the value returned by `f`.
-export const withSpinner = async (
+export const withSpinner = async <TReturn>(
   text: string,
   errorText: string,
   warningText: string,
-  execute: (spinner: Ora) => Promise<unknown>
-): Promise<unknown> => {
+  execute: (spinner: Ora) => Promise<TReturn>
+): Promise<TReturn> => {
   const spinner = gluegun.print.spin({
     text,
     stream: process.stdout,
@@ -31,7 +31,7 @@ export const withSpinner = async (
           spinner.warn(`${warningText}: ${res.warning}`);
         }
         spinner.succeed(text);
-        return res.result;
+        return res.result as TReturn;
       } else {
         spinner.succeed(text);
         return result;

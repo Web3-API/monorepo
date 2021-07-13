@@ -1,0 +1,12 @@
+format: 0.0.1-prealpha.1
+description: ENS plugin
+repository: https://github.com
+query:
+  schema:
+    file: ./schema.graphql
+  module:
+    language: wasm/assemblyscript
+    file: ./index.ts
+import_redirects:
+  - uri: w3://ens/ethereum.web3api.eth
+    schema: ../ethereum/schema.graphql

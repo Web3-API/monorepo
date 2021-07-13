@@ -1,0 +1,21 @@
+import { Client, PluginModule } from "@web3api/core-js";
+
+{{#queryTypes}}
+export interface {{type}}Module extends PluginModule {
+  {{#methods}}
+  {{name}}: (
+    input: Input_{{name}}
+  ) => {{#return}}{{#toTypescript}}{{toGraphQLType}}{{/toTypescript}}{{/return}};
+  {{/methods}}
+}
+
+{{#methods}}
+export interface Input_{{name}} {
+  {{#arguments}}
+  {{name}}{{^required}}?{{/required}}: {{#toTypescript}}{{toGraphQLType}}{{/toTypescript}};
+  {{/arguments}}
+}
+{{/methods}}
+{{/queryTypes}}
+
+export const schema = `{{schema}}`;

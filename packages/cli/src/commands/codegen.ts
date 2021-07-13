@@ -1,5 +1,5 @@
 /* eslint-disable prefer-const */
-import { CodeGenerator, Project, SchemaComposer } from "../lib";
+import { CodeGenerator, Compiler, Project, SchemaComposer } from "../lib";
 import { fixParameters } from "../lib/helpers/parameters";
 import { intlMsg } from "../lib/intl";
 
@@ -119,16 +119,13 @@ export default {
     }
 
     // Resolve generation file & output directories
-    generationFile =
-      (generationFile && filesystem.resolve(generationFile)) ||
-      filesystem.resolve(defaultGenerationFile);
+    generationFile = generationFile && filesystem.resolve(generationFile);
     manifestPath =
       (manifestPath && filesystem.resolve(manifestPath)) ||
       ((await filesystem.existsAsync(defaultManifest[0]))
         ? filesystem.resolve(defaultManifest[0])
         : filesystem.resolve(defaultManifest[1]));
-    outputDir =
-      (outputDir && filesystem.resolve(outputDir)) || filesystem.path("types");
+    outputDir = outputDir && filesystem.resolve(outputDir);
 
     const project = new Project({
       web3apiManifestPath: manifestPath,
@@ -141,14 +138,28 @@ export default {
       ensAddress,
     });
 
-    const codeGenerator = new CodeGenerator({
-      project,
-      schemaComposer,
-      generationFile,
-      outputDir,
-    });
+    let result = false;
 
-    if (await codeGenerator.generate()) {
+    if (generationFile) {
+      const codeGenerator = new CodeGenerator({
+        project,
+        schemaComposer,
+        generationFile,
+        outputDir: outputDir || filesystem.path("types"),
+      });
+
+      result = await codeGenerator.generate();
+    } else {
+      const compiler = new Compiler({
+        project,
+        outputDir: outputDir || filesystem.path("build"),
+        schemaComposer,
+      });
+
+      result = await compiler.codegen();
+    }
+
+    if (result) {
       print.success(`🔥 ${intlMsg.commands_codegen_success()} 🔥`);
       process.exitCode = 0;
     } else {

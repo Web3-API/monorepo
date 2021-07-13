@@ -17,7 +17,7 @@ Options:
     " | "
   )})
   -i, --ipfs [<node>]                     IPFS node to load external schemas (default: dev-server's node)
-  -o, --output-dir <path>                 Output directory for generated types (default: types/)
+  -o, --output-dir <path>                 Output directory for generated types (default: ['build/', 'types/'])
   -e, --ens [<address>]                   ENS address to lookup external schemas (default: 0x0000...2e1e)
 
 `;
