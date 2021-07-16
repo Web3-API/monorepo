@@ -130,5 +130,6 @@
   "lib_project_invalid_build_language": "Unrecognized build language {language}. No default manifest found at {defaultPath}",
   "lib_project_language_not_found": "Build language not found. Please include the `language` property in the manifest file.",
   "lib_watcher_alreadyWatching": "Watcher session is already in progress. Directory: {dir}",
-  "lib_docker_invalidImageId": "Invalid docker image ID returned: {imageId}"
+  "lib_docker_invalidImageId": "Invalid docker image ID returned: {imageId}",
+  "dockerVerifyMiddleware_noDocker": "Docker executable not found in PATH"
 }

@@ -10,6 +10,7 @@ import {
 import { fixParameters } from "../lib/helpers/parameters";
 import { publishToIPFS } from "../lib/publishers/ipfs-publisher";
 import { intlMsg } from "../lib/intl";
+import { SharedMiddlewareState } from "../lib/middleware";
 
 import chalk from "chalk";
 import axios from "axios";
@@ -39,7 +40,7 @@ export default {
   alias: ["b"],
   description: intlMsg.commands_build_description(),
   run: async (toolbox: GluegunToolbox): Promise<void> => {
-    const { filesystem, parameters, print } = toolbox;
+    const { filesystem, parameters, print, middleware } = toolbox;
 
     const { h, i, o, w, e, v } = parameters.options;
     let { help, ipfs, outputDir, watch, testEns, verbose } = parameters.options;
@@ -115,6 +116,16 @@ export default {
       return;
     }
 
+    const middlewareState: SharedMiddlewareState = await middleware.run({
+      name: toolbox.command?.name,
+      options: { help, ipfs, outputDir, watch, testEns, verbose, manifestPath },
+    });
+
+    if (!middlewareState.dockerPath) {
+      print.error(intlMsg.dockerVerifyMiddleware_noDocker());
+      return;
+    }
+
     // Resolve manifest & output directories
     manifestPath =
       (manifestPath && filesystem.resolve(manifestPath)) ||
@@ -184,7 +195,9 @@ export default {
 
     const execute = async (): Promise<boolean> => {
       compiler.reset();
+      await middlewareState.dockerLock?.request();
       const result = await compiler.compile();
+      void middlewareState.dockerLock?.release();
 
       if (!result) {
         return result;

@@ -41,7 +41,7 @@ export default {
   alias: ["c"],
   description: intlMsg.commands_create_description(),
   run: async (toolbox: GluegunToolbox): Promise<void> => {
-    const { parameters, print, prompt, filesystem } = toolbox;
+    const { parameters, print, prompt, filesystem, middleware } = toolbox;
 
     // Options
     let { help, outputDir } = parameters.options;
@@ -119,6 +119,11 @@ export default {
       print.info(HELP);
       return;
     }
+
+    await middleware.run({
+      name: toolbox.command?.name,
+      options: { help, outputDir, type, lang, name },
+    });
 
     const projectDir = outputDir ? `${outputDir}/${name}` : name;
 

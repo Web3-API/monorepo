@@ -25,7 +25,7 @@ export default {
   alias: ["q"],
   description: intlMsg.commands_query_description(),
   run: async (toolbox: GluegunToolbox): Promise<void> => {
-    const { filesystem, parameters, print } = toolbox;
+    const { filesystem, parameters, print, middleware } = toolbox;
     // eslint-disable-next-line prefer-const
     let { t, testEns } = parameters.options;
 
@@ -59,6 +59,11 @@ export default {
       print.info(HELP);
       return;
     }
+
+    await middleware.run({
+      name: toolbox.command?.name,
+      options: { testEns, recipePath },
+    });
 
     let ipfsProvider = "";
     let ethereumProvider = "";

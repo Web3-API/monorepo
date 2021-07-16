@@ -1,6 +1,7 @@
 import { startupTestEnv, shutdownTestEnv } from "../lib/test-env";
 import { withSpinner } from "../lib/helpers/spinner";
 import { intlMsg } from "../lib/intl";
+import { SharedMiddlewareState } from "../lib/middleware";
 
 import { GluegunToolbox, print } from "gluegun";
 import chalk from "chalk";
@@ -17,7 +18,7 @@ export default {
   alias: ["t"],
   description: intlMsg.commands_testEnv_description(),
   run: async (toolbox: GluegunToolbox): Promise<unknown> => {
-    const { parameters } = toolbox;
+    const { parameters, middleware } = toolbox;
     const command = parameters.first;
 
     if (!command) {
@@ -34,6 +35,16 @@ export default {
       );
       print.error(unrecognizedCommandMessage);
       print.info(HELP);
+      return;
+    }
+
+    const middlewareState: SharedMiddlewareState = await middleware.run({
+      name: toolbox.command?.name,
+      options: { command },
+    });
+
+    if (!middlewareState.dockerPath) {
+      print.error(intlMsg.dockerVerifyMiddleware_noDocker());
       return;
     }
 
