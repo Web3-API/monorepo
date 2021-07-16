@@ -19,7 +19,7 @@
     "build": "rimraf ./build && tsc --project tsconfig.build.json && npx webpack-cli --config webpack.config.js",
     "prebuild": "ts-node ./scripts/extractPluginConfigs.ts",
     "lint": "eslint --color --ext .ts src/",
-    "test": "cross-env TEST=true jest --passWithNoTests --runInBand --verbose",
+    "test": "cross-env TEST=true jest --passWithNoTests --runInBand --verbose --detectOpenHandles",
     "test:ci": "cross-env TEST=true jest --passWithNoTests --runInBand --verbose",
     "test:watch": "cross-env TEST=true jest --watch --passWithNoTests --verbose"
   },

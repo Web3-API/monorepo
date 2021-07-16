@@ -23,6 +23,8 @@ import {
   sanitizeInterfaceImplementations,
   sanitizePluginRegistrations,
   getImplementations,
+  Subscription,
+  SubscribeOptions,
 } from "@web3api/core-js";
 import { Tracer } from "@web3api/tracing-js";
 
@@ -36,7 +38,7 @@ export interface ClientConfig<TUri = string> {
 export class Web3ApiClient implements Client {
   // TODO: the API cache needs to be more like a routing table.
   // It should help us keep track of what URI's map to what APIs,
-  // and handle cases where the are multiple jumps. For exmaple, if
+  // and handle cases where the are multiple jumps. For example, if
   // A => B => C, then the cache should have A => C, and B => C.
   private _apiCache: ApiCache = new Map<string, Api>();
   private _config: Required<ClientConfig<Uri>> = {
@@ -237,6 +239,100 @@ export class Web3ApiClient implements Client {
         const result = (await api.invoke(options, this)) as TData;
 
         return result;
+      }
+    );
+
+    return run(typedOptions);
+  }
+
+  public subscribe<
+    TData extends Record<string, unknown> = Record<string, unknown>,
+    TVariables extends Record<string, unknown> = Record<string, unknown>
+  >(options: SubscribeOptions<TVariables, string>): Subscription<TData>;
+  public subscribe<
+    TData extends Record<string, unknown> = Record<string, unknown>,
+    TVariables extends Record<string, unknown> = Record<string, unknown>
+  >(options: SubscribeOptions<TVariables, Uri>): Subscription<TData>;
+  public subscribe<
+    TData extends Record<string, unknown> = Record<string, unknown>,
+    TVariables extends Record<string, unknown> = Record<string, unknown>
+  >(options: SubscribeOptions<TVariables, string | Uri>): Subscription<TData> {
+    let typedOptions: SubscribeOptions<TVariables, Uri>;
+    if (typeof options.uri === "string") {
+      typedOptions = {
+        ...options,
+        uri: new Uri(options.uri),
+      };
+    } else {
+      typedOptions = options as QueryApiOptions<TVariables, Uri>;
+    }
+
+    const run = Tracer.traceFunc(
+      "Web3ApiClient: subscribe",
+      (options: SubscribeOptions<TVariables, Uri>): Subscription<TData> => {
+        const { uri, query, variables, frequency: freq } = options;
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const client: Web3ApiClient = this;
+        // calculate interval between queries, in milliseconds, 1 min default value
+        /* eslint-disable prettier/prettier */
+        let frequency: number;
+        if (freq && (freq.ms || freq.sec || freq.min || freq.hours)) {
+          frequency = (freq.ms ?? 0) + (
+            (freq.hours ?? 0) * 3600 +
+            (freq.min ?? 0) * 60 +
+            (freq.sec ?? 0)
+          ) * 1000
+        } else {
+          frequency = 60000;
+        }
+        /* eslint-enable  prettier/prettier */
+
+        const subscription: Subscription<TData> = {
+          frequency: frequency,
+          isActive: false,
+          stop(): void {
+            subscription.isActive = false;
+          },
+          async *[Symbol.asyncIterator](): AsyncGenerator<
+            QueryApiResult<TData>
+          > {
+            subscription.isActive = true;
+            let timeout: NodeJS.Timeout | undefined = undefined;
+            try {
+              let readyVals = 0;
+              let sleep: ((value?: unknown) => void) | undefined;
+              timeout = setInterval(async () => {
+                readyVals++;
+                if (sleep) {
+                  sleep();
+                  sleep = undefined;
+                }
+              }, frequency);
+
+              while (subscription.isActive) {
+                if (readyVals === 0) {
+                  await new Promise((r) => (sleep = r));
+                }
+                for (; readyVals > 0; readyVals--) {
+                  if (!subscription.isActive) break;
+                  const result: QueryApiResult<TData> = await client.query({
+                    uri: uri,
+                    query: query,
+                    variables: variables,
+                  });
+                  yield result;
+                }
+              }
+            } finally {
+              if (timeout) {
+                clearInterval(timeout);
+              }
+              subscription.isActive = false;
+            }
+          },
+        };
+
+        return subscription;
       }
     );
 
